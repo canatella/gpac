@@ -64,6 +64,7 @@ static jmethodID mFlush;
 
 static JavaVM *jvm;
 static Bool configured;
+static __thread Bool attached;
 
 /* Uncomment the next line if you want to debug */
 /* #define DROID_EXTREME_LOGS */
@@ -121,8 +122,10 @@ JNIEnv *gf_droidaudio_jni_attach_current_thread()
 	assert(jvm && *jvm);
 	JNIEnv *env = NULL;
 	jint rc = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_6);
-	if (rc == JNI_EDETACHED)
+	if (rc == JNI_EDETACHED) {
+		attached = GF_TRUE;
 		(*jvm)->AttachCurrentThread(jvm, &env, NULL);
+	}
 	return env;
 }
 
@@ -205,7 +208,8 @@ static void WAV_Shutdown(GF_AudioOutput *dr)
 	WAV_Deconfigure(ctx);
 	(*env)->DeleteGlobalRef(env, cAudioTrack);
 	cAudioTrack = NULL;
-	gf_droidaudio_jni_detach_current_thread();
+	if (attached)
+		gf_droidaudio_jni_detach_current_thread();
 }
 
 
