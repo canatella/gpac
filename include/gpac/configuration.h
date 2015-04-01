@@ -24,7 +24,7 @@
  */
 
 
-#ifndef _GF_CONFIG_H_
+#ifdef _GF_CONFIG_H_
 #define _GF_CONFIG_H_
 
 #define GPAC_CONFIGURATION "(static configuration file)"
@@ -296,4 +296,3 @@
 
 
 #endif		/*_GF_CONFIG_H_*/
-
