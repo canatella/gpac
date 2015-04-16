@@ -324,6 +324,8 @@ char *gf_log_get_tools_levels()
 #ifndef GPAC_DISABLE_LOG
 u32 call_lev = 0;
 u32 call_tool = 0;
+const char *call_file = NULL;
+u32 call_line = 0;
 
 GF_EXPORT
 Bool gf_log_tool_level_on(u32 log_tool, u32 log_level)
@@ -333,7 +335,7 @@ Bool gf_log_tool_level_on(u32 log_tool, u32 log_level)
 	return GF_FALSE;
 }
 
-void default_log_callback(void *cbck, u32 level, u32 tool, const char* fmt, va_list vlist)
+void default_log_callback(void *cbck, u32 level, u32 tool, const char *file, u32 line, const char* fmt, va_list vlist)
 {
 #ifndef _WIN32_WCE
 	vfprintf(stderr, fmt, vlist);
@@ -349,7 +351,7 @@ void gf_log(const char *fmt, ...)
 {
 	va_list vl;
 	va_start(vl, fmt);
-	log_cbk(user_log_cbk, call_lev, call_tool, fmt, vl);
+	log_cbk(user_log_cbk, call_lev, call_tool, call_file, call_line, fmt, vl);
 	va_end(vl);
 	if (log_exit_on_error && call_lev==GF_LOG_ERROR)
 		exit(1);
@@ -375,10 +377,12 @@ void gf_log_set_tool_level(u32 tool, u32 level)
 }
 
 GF_EXPORT
-void gf_log_lt(u32 ll, u32 lt)
+void gf_log_lt(u32 ll, u32 lt, const char *file, u32 line)
 {
 	call_lev = ll;
 	call_tool = lt;
+	call_file = file;
+	call_line = line;
 }
 
 GF_EXPORT
@@ -397,7 +401,7 @@ void gf_log(const char *fmt, ...)
 {
 }
 GF_EXPORT
-void gf_log_lt(u32 ll, u32 lt)
+void gf_log_lt(u32 ll, u32 lt, const char *file, u32 line)
 {
 }
 GF_EXPORT

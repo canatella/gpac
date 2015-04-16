@@ -392,7 +392,7 @@ void dc_cmd_data_destroy(CmdData *cmd_data)
 	gf_sys_close();
 }
 
-static void on_dc_log(void *cbk, u32 ll, u32 lm, const char *av_fmt_ctx, va_list list)
+static void on_dc_log(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *av_fmt_ctx, va_list list)
 {
 	FILE *logs = (FILE*)cbk;
 	vfprintf(logs, av_fmt_ctx, list);

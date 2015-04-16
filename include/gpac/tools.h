@@ -415,7 +415,7 @@ void gf_log_set_tool_level(u32 tool, u32 level);
  *	\param vlist message log param.
  *
  */
-typedef void (*gf_log_cbk)(void *cbck, u32 log_level, u32 log_tool, const char* fmt, va_list vlist);
+typedef void (*gf_log_cbk)(void *cbck, u32 log_level, u32 log_tool, const char *file, u32 line, const char* fmt, va_list vlist);
 
 /*!
  *	\brief Log overwrite
@@ -447,7 +447,7 @@ gf_log_cbk gf_log_set_callback(void *usr_cbk, gf_log_cbk cbk);
 
 /*this is all a bit ugly, but most compilers don't properly handle variadic macros...*/
 void gf_log(const char *fmt, ...);
-void gf_log_lt(u32 ll, u32 lt);
+void gf_log_lt(u32 ll, u32 lt, const char *file, u32 line);
 
 
 /*!
@@ -496,7 +496,7 @@ void gf_log_set_tool_level(u32 tool, u32 level);
  *
  *	Macro for logging messages. Usage is GF_LOG(log_lev, log_module, (fmt, ...)). The log function is only called if log filtering allows it. This avoids fetching logged parameters when the tool is not being logged.
 */
-#define GF_LOG(_log_level, _log_tools, __args) if (gf_log_tool_level_on(_log_tools, _log_level) ) { gf_log_lt(_log_level, _log_tools); gf_log __args ;}
+#define GF_LOG(_log_level, _log_tools, __args) if (gf_log_tool_level_on(_log_tools, _log_level) ) { gf_log_lt(_log_level, _log_tools, __FILE__, __LINE__); gf_log __args ;}
 #endif
 
 

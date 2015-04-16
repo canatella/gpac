@@ -231,7 +231,7 @@ Bool GPAC_EventProc(void *ptr, GF_Event *evt)
 }
 
 
-static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *fmt, va_list list)
+static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *fmt, va_list list)
 {
 	FILE *logs = cbk;
 
@@ -271,7 +271,7 @@ static void init_rti_logs(char *rti_file, char *url, Bool use_rtix)
 
 static void on_progress_null(const void *_ptr, const char *_title, u64 done, u64 total)
 {
-    
+
 }
 
 #ifdef GPAC_IPHONE
@@ -301,7 +301,7 @@ int main (int argc, char *argv[])
 
 	fill_ar = visible = 0;
 	url_arg = the_cfg = rti_file = NULL;
-	
+
     for (i=1; i<argc; i++) {
         char *arg = argv[i];
         if (arg[0] != '-') {
@@ -324,17 +324,17 @@ int main (int argc, char *argv[])
 #endif
         }
     }
-    
+
 	gf_sys_init(enable_mem_tracker);
     gf_set_progress_callback(NULL, on_progress_null);
-	
+
 	if (logs_settings) {
 		if (gf_log_set_tools_levels(logs_settings) != GF_OK) {
 			return 1;
 		}
 		logs_set = GF_TRUE;
 	}
-	
+
 	cfg_file = gf_cfg_init(the_cfg, NULL);
 	if (!cfg_file) {
 		fprintf(stderr, "Error: Configuration File \"GPAC.cfg\" not found\n");
@@ -385,7 +385,7 @@ int main (int argc, char *argv[])
 	if (no_audio) user.init_flags |= GF_TERM_NO_AUDIO;
 	if (no_regulation) user.init_flags |= GF_TERM_NO_REGULATION;
     user.init_flags |= GF_TERM_NO_DECODER_THREAD;
-    
+
 	GF_LOG(GF_LOG_INFO, GF_LOG_APP, ("Loading GPAC Terminal\n"));
 	term = gf_term_new(&user);
 	if (!term) {
@@ -431,13 +431,13 @@ int main (int argc, char *argv[])
 	Run = 1;
 	ret = 1;
 
-	
+
 	ext = url_arg ? strrchr(url_arg, '.') : NULL;
 	if (ext && (!stricmp(ext, ".m3u") || !stricmp(ext, ".pls"))) {
 		char pl_path[GF_MAX_PATH];
 		GF_Err e = GF_OK;
 		fprintf(stderr, "Opening Playlist %s\n", url_arg);
-		
+
 		strcpy(pl_path, url_arg);
 		/*this is not clean, we need to have a plugin handle playlist for ourselves*/
 		if (!strncmp("http:", url_arg, 5)) {
@@ -448,7 +448,7 @@ int main (int argc, char *argv[])
 				gf_dm_sess_del(sess);
 			}
 		}
-		
+
 		playlist = e ? NULL : gf_fopen(pl_path, "rt");
 		if (playlist) {
 			request_next_playlist_item = GF_TRUE;
@@ -460,6 +460,10 @@ int main (int argc, char *argv[])
 		}
 	} else if (url_arg) {
         gf_term_connect(term, url_arg);
+<<<<<<< variant A
+>>>>>>> variant B
+
+======= end
     } else {
         str = gf_cfg_get_key(cfg_file, "General", "StartupFile");
         if (str) {
@@ -480,10 +484,10 @@ int main (int argc, char *argv[])
 
 		if (request_next_playlist_item) {
 			char szPath[GF_MAX_PATH];
-			
+
 			request_next_playlist_item=0;
 			gf_term_disconnect(term);
-			
+
 			if (fscanf(playlist, "%s", szPath) == EOF) {
 				fprintf(stderr, "No more items - exiting\n");
 				Run = 0;
@@ -494,7 +498,7 @@ int main (int argc, char *argv[])
 				gf_term_connect_with_path(term, szPath, url_arg);
 			}
 		}
-	
+
 		if (!use_rtix || display_rti) UpdateRTInfo(NULL);
 		if (not_threaded) {
 			//printf("gf_term_process_step from run loop\n");

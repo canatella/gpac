@@ -191,7 +191,7 @@ void COsmo4AppView::DisplayRTI()
 
 
 //GPAC log function
-static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *fmt, va_list list)
+static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *fmt, va_list list)
 {
 	char szMsg[2048];
 	COsmo4AppView *app = (COsmo4AppView *)cbk;

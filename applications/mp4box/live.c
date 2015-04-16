@@ -71,7 +71,7 @@ void PrintStreamerUsage()
 	       );
 }
 
-static void on_logs(void *cbk, u32 ll, u32 lm, const char *fmt, va_list list)
+static void on_logs(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *fmt, va_list list)
 {
 	FILE *logs = (FILE*)cbk;
 	vfprintf(logs, fmt, list);

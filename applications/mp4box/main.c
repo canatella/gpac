@@ -837,7 +837,7 @@ void PrintUsage()
 }
 
 
-void scene_coding_log(void *cbk, u32 log_level, u32 log_tool, const char *fmt, va_list vlist)
+void scene_coding_log(void *cbk, u32 log_level, u32 log_tool, const char *file, u32 line, const char *fmt, va_list vlist)
 {
 	FILE *logs = cbk;
 	if (log_tool != GF_LOG_CODING) return;
@@ -1654,7 +1654,7 @@ static GF_Err nhml_bs_to_bin(char *inName, char *outName, u32 dump_std)
 
 	GF_DOMParser *dom = gf_xml_dom_new();
 	e = gf_xml_dom_parse(dom, inName, NULL, NULL);
-	if (e) {	
+	if (e) {
 		gf_xml_dom_del(dom);
 		fprintf(stderr, "Failed to parse XML file: %s\n", gf_error_to_string(e));
 		return e;
@@ -1668,7 +1668,7 @@ static GF_Err nhml_bs_to_bin(char *inName, char *outName, u32 dump_std)
 	e = gf_xml_parse_bit_sequence(root, &data, &data_size);
 	gf_xml_dom_del(dom);
 
-	if (e) {	
+	if (e) {
 		fprintf(stderr, "Failed to parse binary sequence: %s\n", gf_error_to_string(e));
 		return e;
 	}
@@ -1722,7 +1722,7 @@ static GF_Err hash_file(char *name, u32 dump_std)
 Bool log_sys_clock = GF_FALSE;
 Bool log_utc_time = GF_FALSE;
 
-static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *fmt, va_list list)
+static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *fmt, va_list list)
 {
 	FILE *logs = cbk;
 
@@ -1911,7 +1911,7 @@ u32 mp4box_cleanup(u32 ret_code) {
 		gf_free(dash_inputs);
 		dash_inputs = NULL;
 	}
-	gf_sys_close();	
+	gf_sys_close();
 	return ret_code;
 }
 
@@ -3846,7 +3846,7 @@ int mp4boxMain(int argc, char **argv)
 		e = gf_dasher_set_info(dasher, dash_title, cprt, dash_more_info, dash_source);
 		if (e) { fprintf(stderr, "DASH Error: %s\n", gf_error_to_string(e)); return mp4box_cleanup(1); }
 
-		//e = gf_dasher_set_location(dasher, mpd_source);		
+		//e = gf_dasher_set_location(dasher, mpd_source);
 		for (i=0; i < nb_mpd_base_urls; i++) {
 			e = gf_dasher_add_base_url(dasher, mpd_base_urls[i]);
 			if (e) { fprintf(stderr, "DASH Error: %s\n", gf_error_to_string(e)); return mp4box_cleanup(1); }
@@ -3874,9 +3874,9 @@ int mp4boxMain(int argc, char **argv)
 		for (i=0; i < nb_dash_inputs; i++) {
 			if (!e) e = gf_dasher_add_input(dasher, &dash_inputs[i]);
 		}
-		if (e) { 
+		if (e) {
 			fprintf(stderr, "DASH Setup Error: %s\n", gf_error_to_string(e));
-			return mp4box_cleanup(1); 
+			return mp4box_cleanup(1);
 		}
 
 		while (1) {
@@ -3886,7 +3886,7 @@ int mp4boxMain(int argc, char **argv)
 
 			if (!e) e = gf_dasher_process(dasher, dash_subduration);
 
-			if (do_abort) 
+			if (do_abort)
 				break;
 
 			//this happens when reading file while writing them (local playback of the live session ...)
@@ -4860,7 +4860,7 @@ int mp4boxMain(int argc, char **argv)
 		e = gf_isom_make_interleave(file, interleaving_time);
 		if (!e && old_interleave) e = gf_isom_set_storage_mode(file, GF_ISOM_STORE_INTERLEAVED);
 	}
-	if (force_co64) 
+	if (force_co64)
 		gf_isom_force_64bit_chunk_offset(file, GF_TRUE);
 
 	if (e) goto err_exit;

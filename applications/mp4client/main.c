@@ -1023,7 +1023,7 @@ static Bool get_time_list(char *arg, u32 *times, u32 *nb_times)
 }
 
 static u64 last_log_time=0;
-static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *fmt, va_list list)
+static void on_gpac_log(void *cbk, u32 ll, u32 lm, const char *file, u32 line, const char *fmt, va_list list)
 {
 	FILE *logs = cbk ? cbk : stderr;
 
@@ -1092,7 +1092,7 @@ void set_cfg_option(char *opt_string)
 	strcpy(szKey, sep);
 	strcpy(szVal, sep2+1);
 	sep2[0] = '=';
-	
+
 	if (!stricmp(szKey, "*")) {
 		if (stricmp(szVal, "null")) {
 			fprintf(stderr, "Badly formatted option %s - expected Section:*=null\n", opt_string);
@@ -1101,7 +1101,7 @@ void set_cfg_option(char *opt_string)
 		gf_cfg_del_section(cfg_file, szSec);
 		return;
 	}
-	
+
 	if (!stricmp(szVal, "null")) {
 		szVal[0]=0;
 	}
@@ -1412,7 +1412,7 @@ int mp4client_main(int argc, char **argv)
 #if defined(__DARWIN__) || defined(__APPLE__)
     carbon_init();
 #endif
-    
+
 
 	if (dump_mode) rti_file = NULL;
 
@@ -2974,4 +2974,3 @@ void PrintGPACConfig()
 		fprintf(stderr, "\n");
 	}
 }
-

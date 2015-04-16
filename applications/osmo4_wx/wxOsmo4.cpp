@@ -515,7 +515,7 @@ void wxOsmo4Frame::CheckVideoOut()
 	SetWindowStyle(wxDEFAULT_FRAME_STYLE & ~(wxMAXIMIZE_BOX | wxRESIZE_BORDER));
 }
 
-static void wxOsmo4_do_log(void *cbk, u32 level, u32 tool, const char *fmt, va_list list)
+static void wxOsmo4_do_log(void *cbk, u32 level, u32 tool, const char *file, u32 line, const char *fmt, va_list list)
 {
 	wxOsmo4Frame *osmo = (wxOsmo4Frame *)cbk;
 
@@ -2390,4 +2390,3 @@ void wxOsmo4Frame::OnUpdateFilePaste(wxUpdateUIEvent &event)
 	}
 	event.Enable(ok ? 1 : 0);
 }
-
