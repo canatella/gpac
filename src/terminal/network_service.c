@@ -861,6 +861,15 @@ static GF_InputService *gf_term_can_handle_service(GF_Terminal *term, const char
 		force_module = "LibPlayer";
 	}
 
+#ifndef	GPAC_NO_SHORTCUT
+	if (strstr(url, "http") && strstr(url, ".m3u")) {
+		GF_LOG(GF_LOG_DEBUG, GF_LOG_MEDIA, ("[Terminal] %s looks like apple.mpegurl\n", url));
+		no_mime_check = GF_TRUE;
+		mime_type = gf_strdup("application/vnd.apple.mpegurl");
+	}
+#endif
+
+
 	/*used by GUIs scripts to skip URL concatenation*/
 	if (!strncmp(url, "gpac://", 7)) sURL = gf_strdup(url+7);
 	/*opera-style localhost URLs*/
@@ -875,9 +884,7 @@ static GF_InputService *gf_term_can_handle_service(GF_Terminal *term, const char
 		gf_url_to_fs_path(sURL);
 
 	if (the_session) *the_session = NULL;
-	if (no_mime_check) {
-		mime_type = NULL;
-	} else {
+	if (!no_mime_check) {
 		/*fetch a mime type if any. If error don't even attempt to open the service
 		TRYTOFIXME: it would be nice to reuse the downloader created while fetching the mime type, however
 		we don't know if the plugin will want it threaded or not....
