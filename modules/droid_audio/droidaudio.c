@@ -45,15 +45,12 @@
 #include <gpac/constants.h>
 
 
-
+#include "javaenv.h"
 
 static const char android_device[] = "Android Default";
 
-static JavaVM *jvm;
 static GF_DroidAudio_EventCallback event_callback;
 static void *event_callback_ctx;
-
-static __thread Bool attached;
 
 /* Uncomment the next line if you want to debug */
 /* #define DROID_EXTREME_LOGS */
@@ -92,60 +89,12 @@ typedef struct
 } DroidContext;
 
 /**
- * Register the java virtual machine
- */
-void gf_droidaudio_register_java_vm(JavaVM *vm)
-{
-	jvm = vm;
-}
-
-/**
  * Register the event handler
  */
 void gf_droidaudio_register_event_handler(GF_DroidAudio_EventCallback cb, void *ctx)
 {
 	event_callback = cb;
 	event_callback_ctx = ctx;
-}
-
-/**
- * Get the jni thread environment
- */
-JNIEnv *gf_droidaudio_jni_get_thread_env()
-{
-	assert(jvm && *jvm);
-	JNIEnv *env;
-	jint rc = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_6);
-	if (rc != JNI_OK)
-		return NULL;
-	assert(env);
-	assert((*env)->GetVersion(env));
-	return env;
-}
-
-/**
- * Attach current thread to the jvm, check first if we are attached so
- * this can be called multiple time.
- */
-JNIEnv *gf_droidaudio_jni_attach_current_thread()
-{
-	assert(jvm && *jvm);
-	JNIEnv *env = NULL;
-	jint rc = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_6);
-	if (rc == JNI_EDETACHED) {
-		attached = GF_TRUE;
-		(*jvm)->AttachCurrentThread(jvm, &env, NULL);
-	}
-	return env;
-}
-
-/**
- * Detach current thread from the jvm
- */
-void gf_droidaudio_jni_detach_current_thread()
-{
-	assert(jvm && *jvm);
-	(*jvm)->DetachCurrentThread(jvm);
 }
 
 static void dispatch_event(GF_DroidAudio_Event e)
@@ -214,11 +163,17 @@ static void WAV_Deconfigure(DroidContext *ctx)
 	ctx->configured = GF_FALSE;
 }
 
-	//if ( res == JNI_EDETACHED ) {
-	(*GetJavaVM())->DetachCurrentThread(GetJavaVM());
-	//}
-
-	LOGV("[Android Audio] Shutdown DONE.", 0);
+//----------------------------------------------------------------------
+// Called by the audio thread
+static void WAV_Shutdown(GF_AudioOutput *dr)
+{
+	GF_LOG(GF_LOG_INFO, GF_LOG_AUDIO, ("[Android Audio] Shutdown"));
+	DroidContext *ctx = (DroidContext *)dr->opaque;
+	JNIEnv* env = gf_droidaudio_jni_attach_current_thread();
+	WAV_Deconfigure(ctx);
+	(*env)->DeleteGlobalRef(env, ctx->cAudioTrack);
+	ctx->cAudioTrack = NULL;
+	gf_droidaudio_jni_detach_current_thread();
 }
 
 
