@@ -319,6 +319,7 @@ GF_Err gf_list_add(GF_List *ptr, void* item)
 
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 u32 gf_list_count(GF_List *ptr)
 {
 	if (! ptr) return 0;
@@ -326,6 +327,7 @@ u32 gf_list_count(GF_List *ptr)
 }
 
 GF_EXPORT
+ __attribute__ ((hot,optimize(3)))
 void *gf_list_get(GF_List *ptr, u32 itemNumber)
 {
 	ItemSlot *entry;

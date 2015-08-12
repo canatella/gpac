@@ -961,7 +961,9 @@ GF_Err gf_codec_resize_composition_buffer(GF_Codec *dec, u32 NewSize)
 	return GF_OK;
 }
 
-static GF_Err MediaCodec_Process(GF_Codec *codec, u32 TimeAvailable)
+static
+__attribute__ ((hot,optimize(3)))
+GF_Err MediaCodec_Process(GF_Codec *codec, u32 TimeAvailable)
 {
 	GF_CMUnit *CU;
 	GF_DBUnit *AU;
@@ -1895,5 +1897,3 @@ void gf_codec_del(GF_Codec *codec)
 	codec->inChannels = NULL;
 	gf_free(codec);
 }
-
-

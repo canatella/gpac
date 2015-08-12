@@ -80,6 +80,7 @@ static u64 sys_start_time_hr = 0;
 #ifndef WIN32
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 u32 gf_sys_clock()
 {
 	struct timeval now;
@@ -88,6 +89,7 @@ u32 gf_sys_clock()
 }
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 u64 gf_sys_clock_high_res()
 {
 	struct timeval now;

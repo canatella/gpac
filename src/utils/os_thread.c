@@ -488,6 +488,7 @@ void gf_mx_del(GF_Mutex *mx)
 }
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 void gf_mx_v(GF_Mutex *mx)
 {
 	u32 caller;
@@ -521,6 +522,7 @@ void gf_mx_v(GF_Mutex *mx)
 }
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 u32 gf_mx_p(GF_Mutex *mx)
 {
 #ifndef WIN32
@@ -580,6 +582,7 @@ s32 gf_mx_get_num_locks(GF_Mutex *mx)
 }
 
 GF_EXPORT
+__attribute__ ((hot,optimize(3)))
 Bool gf_mx_try_lock(GF_Mutex *mx)
 {
 	u32 caller;

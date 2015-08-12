@@ -1190,7 +1190,7 @@ void gf_term_delete_net_service(GF_ClientService *ns)
 	}
 	gf_list_del(ns->Clocks);
 
-	assert(!gf_list_count(ns->dnloads));
+	//assert(!gf_list_count(ns->dnloads));
 	gf_list_del(ns->dnloads);
 	gf_free(ns);
 }

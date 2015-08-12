@@ -59,7 +59,7 @@ static void yuv2rgb_init(void)
 	}
 }
 
-static void gf_yuv_load_lines_planar(unsigned char *dst, s32 dststride, unsigned char *y_src, unsigned char *u_src, unsigned char * v_src, s32 y_stride, s32 uv_stride, s32 width)
+static __attribute__ ((hot, optimize(3))) void gf_yuv_load_lines_planar(unsigned char *dst, s32 dststride, unsigned char *y_src, unsigned char *u_src, unsigned char * v_src, s32 y_stride, s32 uv_stride, s32 width)
 {
 	u32 hw, x;
 	unsigned char *dst2 = (unsigned char *) dst + dststride;
@@ -389,7 +389,7 @@ static void copy_row_bgrx(u8 *src, u32 src_w, u8 *dst, u32 dst_w, s32 h_inc, s32
 	}
 }
 
-static void copy_row_rgbx(u8 *src, u32 src_w, u8 *dst, u32 dst_w, s32 h_inc, s32 x_pitch, u8 alpha)
+static __attribute__ ((hot,optimize(3))) void copy_row_rgbx(u8 *src, u32 src_w, u8 *dst, u32 dst_w, s32 h_inc, s32 x_pitch, u8 alpha)
 {
 	u8 a=0, r=0, g=0, b=0;
 	s32 pos = 0x10000L;
