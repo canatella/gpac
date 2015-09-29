@@ -932,6 +932,7 @@ GF_Err gf_isom_update_stxt_description(GF_ISOFile *movie, u32 trackNumber,
 }
 #endif /*GPAC_DISABLE_ISOM_WRITE*/
 
+#ifndef GPAC_DISABLE_VTT
 GF_WebVTTSampleEntryBox *gf_webvtt_isom_get_description(GF_ISOFile *movie, u32 trackNumber, u32 descriptionIndex)
 {
 	GF_WebVTTSampleEntryBox *wvtt;
@@ -959,9 +960,10 @@ GF_WebVTTSampleEntryBox *gf_webvtt_isom_get_description(GF_ISOFile *movie, u32 t
 	}
 	return wvtt;
 }
+#endif
 
 #ifndef GPAC_DISABLE_ISOM_WRITE
-
+#ifndef GPAC_DISABLE_VTT
 GF_Err gf_isom_update_webvtt_description(GF_ISOFile *movie, u32 trackNumber, u32 descriptionIndex, const char *config)
 {
 	GF_Err e;
@@ -1040,20 +1042,7 @@ GF_Err gf_isom_new_webvtt_description(GF_ISOFile *movie, u32 trackNumber, GF_Tex
 	if (outDescriptionIndex) *outDescriptionIndex = gf_list_count(trak->Media->information->sampleTable->SampleDescription->other_boxes);
 	return e;
 }
-
-GF_BitRateBox *gf_isom_sample_entry_get_bitrate(GF_SampleEntryBox *ent, Bool create)
-{
-	u32 i=0;
-	GF_BitRateBox *a;
-	while ((a = (GF_BitRateBox *)gf_list_enum(ent->other_boxes, &i))) {
-		if (a->type==GF_ISOM_BOX_TYPE_BTRT) return a;
-	}
-	if (!create) return NULL;
-	a = (GF_BitRateBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_BTRT);
-	if (!ent->other_boxes) ent->other_boxes = gf_list_new();
-	gf_list_add(ent->other_boxes, a);
-	return a;
-}
+#endif
 
 GF_EXPORT
 GF_Err gf_isom_update_bitrate(GF_ISOFile *movie, u32 trackNumber, u32 sampleDescriptionIndex, u32 average_bitrate, u32 max_bitrate, u32 decode_buffer_size)
@@ -1094,5 +1083,18 @@ GF_Err gf_isom_update_bitrate(GF_ISOFile *movie, u32 trackNumber, u32 sampleDesc
 
 
 #endif /*GPAC_DISABLE_ISOM_WRITE*/
+GF_BitRateBox *gf_isom_sample_entry_get_bitrate(GF_SampleEntryBox *ent, Bool create)
+{
+	u32 i=0;
+	GF_BitRateBox *a;
+	while ((a = (GF_BitRateBox *)gf_list_enum(ent->other_boxes, &i))) {
+		if (a->type==GF_ISOM_BOX_TYPE_BTRT) return a;
+	}
+	if (!create) return NULL;
+	a = (GF_BitRateBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_BTRT);
+	if (!ent->other_boxes) ent->other_boxes = gf_list_new();
+	gf_list_add(ent->other_boxes, a);
+	return a;
+}
 
 #endif /*GPAC_DISABLE_ISOM*/

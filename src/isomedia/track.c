@@ -256,7 +256,7 @@ default_sync:
 	if (! stbl->SyncSample) {
 		if (
 #ifndef GPAC_DISABLE_ISOM_FRAGMENTS
-			moov->mvex && 
+			moov->mvex &&
 #endif
 			(esd->decoderConfig->streamType==GF_STREAM_VISUAL)) {
 			esd->slConfig->hasRandomAccessUnitsOnlyFlag = 0;
@@ -513,7 +513,9 @@ GF_Err MergeTrack(GF_TrackBox *trak, GF_TrackFragmentBox *traf, u64 moof_offset,
 			degr = GF_ISOM_GET_FRAG_DEG(flags);
 			if (degr) stbl_AppendDegradation(trak->Media->information->sampleTable, degr);
 
+#ifndef GPAC_DISABLE_ISOM_WRITE
 			stbl_AppendDependencyType(trak->Media->information->sampleTable, GF_ISOM_GET_FRAG_LEAD(flags), GF_ISOM_GET_FRAG_DEPENDS(flags), GF_ISOM_GET_FRAG_DEPENDED(flags), GF_ISOM_GET_FRAG_REDUNDANT(flags));
+#endif
 		}
 	}
 	/*merge sample groups*/
@@ -547,10 +549,11 @@ GF_Err MergeTrack(GF_TrackBox *trak, GF_TrackFragmentBox *traf, u64 moof_offset,
 			/*merge descriptions*/
 			else {
 				u32 count;
-
+#ifndef GPAC_DISABLE_ISOM_WRITE
 				is_identical_sgpd = gf_isom_is_identical_sgpd(new_sgdesc, sgdesc, 0);
 				if (is_identical_sgpd)
 					continue;
+#endif
 
 				new_idx = (u32 *)gf_malloc(gf_list_count(sgdesc->group_descriptions)*sizeof(u32));
 				count = 0;
@@ -560,6 +563,7 @@ GF_Err MergeTrack(GF_TrackBox *trak, GF_TrackFragmentBox *traf, u64 moof_offset,
 
 					for (j = 0; j < gf_list_count(new_sgdesc->group_descriptions); j++) {
 						void *ptr = gf_list_get(new_sgdesc->group_descriptions, j);
+#ifndef GPAC_DISABLE_ISOM_WRITE
 						if (gf_isom_is_identical_sgpd(sgpd_entry, ptr, new_sgdesc->grouping_type)) {
 							new_idx[count] = j + 1;
 							count ++;
@@ -567,6 +571,7 @@ GF_Err MergeTrack(GF_TrackBox *trak, GF_TrackFragmentBox *traf, u64 moof_offset,
 							gf_free(sgpd_entry);
 							break;
 						}
+#endif
 					}
 
 					if (new_entry) {
