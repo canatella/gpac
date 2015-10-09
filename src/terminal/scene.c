@@ -1245,6 +1245,8 @@ void gf_scene_regenerate(GF_Scene *scene)
 	M_Transform2D *addon_tr;
 	M_Layer2D *addon_layer;
 	M_Inline *addon_scene;
+	const char *sOpt;
+
 	if (scene->is_dynamic_scene != 1) return;
 
 	GF_LOG(GF_LOG_DEBUG, GF_LOG_MEDIA, ("[Inline] Regenerating scene graph for service %s\n", scene->root_od->net_service->url));
@@ -1259,7 +1261,10 @@ void gf_scene_regenerate(GF_Scene *scene)
 		if (strstr(scene->root_od->net_service->url, "#LIVE360TV")) {
 			scene->is_live360 = GF_TRUE;
 		}
-
+		sOpt = gf_cfg_get_key(scene->root_od->term->compositor->user->config, "Compositor", "360");
+		if (sOpt && ! stricmp(sOpt, "yes")) {
+			scene->is_live360 = GF_TRUE;
+		}
 		/*create an OrderedGroup*/
 		n1 = is_create_node(scene->graph, scene->is_live360 ? TAG_MPEG4_Group : TAG_MPEG4_OrderedGroup, NULL);
 		gf_sg_set_root_node(scene->graph, n1);
