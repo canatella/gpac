@@ -277,6 +277,80 @@ struct __dash_group
 void drm_decrypt(unsigned char * data, unsigned long dataSize, const char * decryptMethod, const char * keyfileURL, const unsigned char * keyIV);
 
 
+static GF_Err segment_decrypt_file(const char* local_url, const char *key_url, const unsigned char *iv)
+{
+	GF_Err e = GF_URL_ERROR;
+
+
+	char *decname;
+	asprintf(&decname, "%s.tmp", local_url);
+	GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] decrypt %s\n", local_url));
+
+	FILE *f = gf_fopen(local_url, "rb");
+	if (!f) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] Cannot open next tmp file %s\n", local_url));
+		goto error_free_decname;
+	}
+
+	FILE *o = gf_fopen(decname, "wb");
+
+	if (!o) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] Cannot open next tmp file %s\n", decname));
+		goto error_close_f;
+	}
+
+	GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] URL %s, iv %u %u\n", key_url, iv[0], iv[15]));
+	/* try to decrypt */
+	struct stat stat;
+	fstat(fileno(f), &stat);
+	unsigned char *buffer = gf_malloc(stat.st_size);
+	if (fread(buffer, sizeof(unsigned char), stat.st_size, f) != stat.st_size) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] Unable to read file for decryption: %m\n"));
+		goto error_free_buffer;
+	}
+	drm_decrypt(buffer, stat.st_size, "AES-128", key_url, iv);
+	if (fwrite(buffer, sizeof(unsigned char), stat.st_size, o) != stat.st_size) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] Unable to write file for decryption\n"));
+		goto error_free_buffer;
+	}
+
+	e = gf_move_file(decname, local_url);
+	e = GF_OK;
+
+ error_free_buffer:
+	gf_free(buffer);
+	gf_fclose(o);
+ error_close_f:
+	gf_fclose(f);
+ error_free_decname:
+	free(decname);
+	return e;
+}
+
+static GF_Err segment_decrypt_mem(const char* local_url, const char *key_url, const unsigned char *iv)
+{
+	GF_Err e = GF_URL_ERROR;
+
+	u32 size;
+	void *mem_address;
+	if (sscanf(local_url, "gmem://%d@%p", &size, &mem_address) != 2) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_DASH, ("[DASH] Cannot open memory segment for decryption %s\n", local_url));
+		goto error;
+	}
+	drm_decrypt(mem_address, size, "AES-128", key_url, iv);
+	e = GF_OK;
+
+ error:
+	return e;
+}
+
+static GF_Err segment_decrypt(const char* local_url, const char *key_url, const unsigned char *iv)
+{
+	if (strnicmp(local_url, "gmem://", 7) == 0)
+		return segment_decrypt_mem(local_url, key_url, iv);
+	else
+		return segment_decrypt_file(local_url, key_url, iv);
+}
 
 static const char *gf_dash_get_mime_type(GF_MPD_SubRepresentation *subrep, GF_MPD_Representation *rep, GF_MPD_AdaptationSet *set)
 {
@@ -2716,6 +2790,10 @@ static GF_Err gf_dash_download_init_segment(GF_DashClient *dash, GF_DASH_Group *
 		return GF_BAD_PARAM;
 	}
 
+	if (!group->segment_must_be_streamed)
+		segment_decrypt(init_segment_local_url, key_url, key_iv);
+
+
 	assert(!group->nb_cached_segments);
 	group->cached[0].cache = gf_strdup(init_segment_local_url);
 	group->cached[0].url = gf_strdup( dash->dash_io->get_url(dash->dash_io, group->segment_download) );
@@ -2769,6 +2847,7 @@ static GF_Err gf_dash_download_init_segment(GF_DashClient *dash, GF_DASH_Group *
 					a_rep->playback.cached_init_segment_url = gf_strdup( dash->dash_io->get_cache_name(dash->dash_io, group->segment_download) );
 					a_rep->playback.init_start_range = 0;
 					a_rep->playback.init_end_range = 0;
+					segment_decrypt(a_rep->playback.cached_init_segment_url, key_url, key_iv);
 				}
 				gf_free(a_base_init_url);
 			} else if (e) {
@@ -4315,6 +4394,9 @@ restart_period:
 
 				assert(group->nb_cached_segments<group->max_cached_segments);
 				assert(local_file_name);
+
+				if (!group->segment_must_be_streamed)
+					segment_decrypt(local_file_name, key_url, key_iv);
 
 				if (!empty_file) {
 
