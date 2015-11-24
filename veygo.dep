@@ -1,0 +1,4 @@
+builder
+vendor/android-cmake
+vendor/ffmpeg
+vendor/faad2
