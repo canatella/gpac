@@ -271,7 +271,7 @@ typedef struct _s_accumulated_attributes {
 	bin128 key_iv;
 } s_accumulated_attributes;
 
-static void reset_attributes(s_accumulated_attributes *attributes) 
+static void reset_attributes(s_accumulated_attributes *attributes)
 {
 	memset(attributes, 0, sizeof(s_accumulated_attributes));
 	attributes->type = MEDIA_TYPE_UNKNOWN;
@@ -415,7 +415,8 @@ static char** parse_attributes(const char *line, s_accumulated_attributes *attri
 			if (ret[1] != NULL && safe_start_equals("URI=\"", ret[1])) {
 				int_value = (u32) strlen(ret[1]);
 				if (ret[1][int_value-1] == '"') {
-					attributes->key_url = gf_strdup(&(ret[1][4]));
+					ret[1][int_value-1] = '\0';
+					attributes->key_url = gf_strdup(&(ret[1][5]));
 				}
 			}
 		}
