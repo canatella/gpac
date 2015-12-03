@@ -320,7 +320,7 @@ if (ANDROID)
     GPAC_MODULE_CUSTOM_LOAD
     )
 
-  target_compile_options(gpac PRIVATE -marm -fno-exceptions -fno-signed-char)
+  target_compile_options(gpac PRIVATE -fno-exceptions -fno-signed-char)
   target_include_directories (gpac PRIVATE
     generated/android
     )
