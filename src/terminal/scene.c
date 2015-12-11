@@ -1915,7 +1915,11 @@ void gf_scene_force_size(GF_Scene *scene, u32 width, u32 height)
 		if (scene->root_od->term->root_scene == scene) {
 			if (com.par.width && com.par.height) {
 				gf_sc_set_scene_size(scene->root_od->term->compositor, width, height, 1);
-				if (!scene->force_size_set) {
+				if (scene->ignore_force_sc_size) {
+					gf_sc_set_size(scene->root_od->term->compositor, 0, 0);
+					scene->force_size_set = 1;
+					scene->root_od->term->compositor->recompute_ar = 1;
+				} else if (!scene->force_size_set) {
 					gf_sc_set_size(scene->root_od->term->compositor, com.par.width, com.par.height);
 					scene->force_size_set = 1;
 				} else {

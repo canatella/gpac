@@ -956,6 +956,9 @@ GF_Err gf_codec_resize_composition_buffer(GF_Codec *dec, u32 NewSize)
 
 	//if dynamic scene, set size
 	if ((dec->type==GF_STREAM_VISUAL) && dec->odm->parentscene->is_dynamic_scene) {
+#ifdef GPAC_ANDROID
+		dec->odm->parentscene->ignore_force_sc_size = GF_TRUE;
+#endif
 		gf_scene_force_size_to_video(dec->odm->parentscene, dec->odm->mo);
 	}
 	return GF_OK;

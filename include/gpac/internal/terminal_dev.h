@@ -239,6 +239,7 @@ struct _scene
 
 	Bool pause_at_first_frame;
 	Bool is_live360;
+	Bool ignore_force_sc_size;
 };
 
 GF_Scene *gf_scene_new(GF_Scene *parentScene);
