@@ -49,6 +49,7 @@ enum {
 	GF_GL_HAS_COLOR = (1<<2),
 	//only for fragment shaders
 	GF_GL_IS_YUV = 1<<3,
+	GF_GL_HAS_CLIPPING = 1<<4,
 };
 //endof
 

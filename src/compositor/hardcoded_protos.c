@@ -1162,10 +1162,12 @@ void compositor_init_hardcoded_proto(GF_Compositor *compositor, GF_Node *node)
 			compositor_init_planar_extrusion(compositor, node);
 			return;
 		}
+#ifndef GPAC_DISABLE_CLIPPING
 		if (!strcmp(url, "urn:inet:gpac:builtin:PlaneClipper")) {
 			compositor_init_plane_clipper(compositor, node);
 			return;
 		}
+#endif
 #endif
 		if (!strcmp(url, "urn:inet:gpac:builtin:TextureText")) {
 			compositor_init_texture_text(compositor, node);

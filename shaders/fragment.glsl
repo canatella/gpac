@@ -80,17 +80,19 @@ uniform vec4 gfEmissionColor;
 uniform bool hasMeshColor;
 #endif
 
+#ifdef GF_GL_HAS_CLIPPING
 #if defined(GL_ES)
 uniform lowp int gfNumClippers;
 #else
 uniform int gfNumClippers;
+#endif
 #endif
 
 //Color Matrix
 uniform mat4 gfColorMatrix;
 uniform bool hasColorMatrix;
 uniform vec4 gfTranslationVector;
-	
+
 //Color Key
 uniform vec3 gfKeyColor;
 uniform float gfKeyAlpha;
@@ -137,7 +139,9 @@ varying vec2 TexCoord;
 varying vec4 m_color;
 #endif
 
+#ifdef GF_GL_HAS_CLIPPING
 varying float clipDistance[CLIPS_MAX];
+#endif
 
 //constants
 const float zero_float = 0.0;
@@ -168,7 +172,7 @@ vec4 doLighting(int i){
 		lightV = lightVector[2];
 		halfVnorm = normalize( lightVector[2] + gfEye.xyz );
 	}
-	
+
 	lightVnorm = normalize(lightV);
 	vec3 normal = normalize(m_normal);
 
@@ -176,19 +180,19 @@ vec4 doLighting(int i){
 		//originally: normal *=-1; -> Not compliant with Shading Language v1.0
 		normal *= vec3(-1.0, -1.0, -1.0);
 	}
-	
+
 	float light_cos = max(zero_float, dot(normal, lightVnorm));	//ndotl
 	float half_cos = dot(normal, halfVnorm);
 
 	if (tempLight.type == L_POINT) {	//we have a point
-		float distance = length(lightV);	
+		float distance = length(lightV);
 		att = 1.0 / (tempLight.attenuation.x + tempLight.attenuation.y * distance + tempLight.attenuation.z * distance * distance);
 
 		if (att <= 0.0)
 			return lightColor;
-			
+
 		lightColor += light_cos * tempLight.color * gfDiffuseColor;
-		
+
 		if (light_cos > 0.0) {
 			float dotNormHalf = max(dot(normal, halfVnorm),0.0);	//ndoth
 			lightColor += (pow(dotNormHalf, gfShininess) * gfSpecularColor * tempLight.color);
@@ -196,12 +200,12 @@ vec4 doLighting(int i){
 		}
 		lightColor.a = gfDiffuseColor.a;
 		return lightColor;
-		
+
 	} else if (tempLight.type == L_SPOT) {	//we have a spot
 		if (light_cos > 0.0) {
 			float spot = dot(normalize(tempLight.direction.xyz), lightVnorm);	//it should be -direction, but we invert it before parsing
 			if (spot > tempLight.cutOffAngle) {
-				float distance = length(lightV);	
+				float distance = length(lightV);
 				float dotNormHalf = max(dot(normal, halfVnorm),0.0);	//ndoth
 				spot = pow(spot, tempLight.intensity);
 				att = spot / (tempLight.attenuation.x + tempLight.attenuation.y * distance + tempLight.attenuation.z * distance * distance);
@@ -213,7 +217,7 @@ vec4 doLighting(int i){
 
 	} else if(tempLight.position.w == zero_float || tempLight.type == L_DIRECTIONAL) { //we have a direction
 		vec3 lightDirection = vec3(tempLight.position);
-		lightColor = (gfDiffuseColor * gfLightDiffuse) * light_cos; 
+		lightColor = (gfDiffuseColor * gfLightDiffuse) * light_cos;
 		if (half_cos > zero_float) {
 			lightColor += (gfSpecularColor * gfLightSpecular) * pow(half_cos, gfShininess);
 		}
@@ -227,14 +231,17 @@ vec4 doLighting(int i){
 
 void main()
 {
+#ifdef GF_GL_HAS_CLIPPING
 #ifdef GL_ES
 	bool do_clip = false;
+#endif
 #endif
 	int i;
 	vec2 texc;
 	vec3 yuv, rgb;
 	vec4 rgba, fragColor;
 
+#ifdef GF_GL_HAS_CLIPPING
 	//clipping
 	for (int i=0; i<CLIPS_MAX; i++) {
 		if (i==gfNumClippers) break;
@@ -255,8 +262,8 @@ void main()
 		gl_FragColor.a = 0.0;
 	} else {
 #endif
-	
-	
+#endif
+
 #ifdef GF_GL_HAS_COLOR
 	fragColor = m_color;
 #else
@@ -286,11 +293,11 @@ void main()
 		fragColor.a = gfDiffuseColor.a;
 	}
 #endif
-	
+
 	fragColor = clamp(fragColor, zero_float, one_float);
 
 #ifdef GF_GL_HAS_TEXTURE
-	
+
 	//currently supporting 1 texture
 	if (gfNumTextures>0) {
 #ifdef GF_GL_IS_YUV
@@ -328,40 +335,42 @@ void main()
 			}
 		}
 	}
-	
+
 #endif // GF_GL_HAS_TEXTURE
-	
-	
+
+
 	if (hasColorMatrix) {
 		fragColor = gfColorMatrix * fragColor;
 		fragColor += gfTranslationVector;
 		fragColor = clamp(fragColor, zero_float, one_float);
 	}
-	
+
 	if (hasColorKey) {
 		vec3 tempColour = vec3(0.0, 0.0, 0.0);
 		float mean = 0.0;
-		
+
 		tempColour.r = abs(gfKeyColor.r-fragColor.r);
 		tempColour.g = abs(gfKeyColor.g-fragColor.g);
 		tempColour.b = abs(gfKeyColor.b-fragColor.b);
 		mean = (tempColour.r + tempColour.g + tempColour.b)/3.0;
-		
+
 		if (mean<gfKeyLow) {
 			fragColor.a =0.0;
 		} else if(mean<=gfKeyHigh) {
 			fragColor.a = (mean-gfKeyLow) * gfKeyAlpha / (gfKeyHigh - gfKeyLow);
 		}
 	}
-	
+
 #ifdef GF_GL_HAS_LIGHT
 	if (gfFogEnabled)
 		fragColor = fragColor * gfFogFactor + vec4(gfFogColor, zero_float) * (one_float - gfFogFactor);
 #endif
 	gl_FragColor = fragColor;
 
-	
- #ifdef GL_ES
+
+#ifdef GF_GL_HAS_CLIPPING
+#ifdef GL_ES
 	}
+#endif
 #endif
 }

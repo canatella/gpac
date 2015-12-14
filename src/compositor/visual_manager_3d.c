@@ -721,7 +721,9 @@ void visual_3d_register_context(GF_TraverseState *tr_state, GF_Node *geometry)
 		/*back to SORT*/
 		tr_state->traversing_mode = TRAVERSE_SORT;
 
+#ifndef GPAC_DISABLE_CLIPPING
 		if (tr_state->has_clip) visual_3d_reset_clipper_2d(tr_state->visual);
+#endif
 		return;
 	}
 
@@ -1967,6 +1969,7 @@ void visual_3d_set_material_2d_argb(GF_VisualManager *visual, u32 col)
 
 void visual_3d_set_clipper_2d(GF_VisualManager *visual, GF_Rect clip, GF_Matrix *mx_at_clipper, Bool is_2d_clip)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 	GF_Plane p;
 
 	if (visual->num_clips + 4 > visual->max_clips)
@@ -1990,28 +1993,35 @@ void visual_3d_set_clipper_2d(GF_VisualManager *visual, GF_Rect clip, GF_Matrix 
 	p.normal.y = FIX_ONE;
 	p.d = clip.height - clip.y;
 	visual_3d_set_clip_plane(visual, p, mx_at_clipper, is_2d_clip);
+#endif
 }
 
 void visual_3d_reset_clipper_2d(GF_VisualManager *visual)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 	if (visual->num_clips < 4) return;
 	visual->num_clips -= 4;
+#endif
 }
 
 void visual_3d_set_clip_plane(GF_VisualManager *visual, GF_Plane p, GF_Matrix *mx_at_clipper, Bool is_2d_clip)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 	if (visual->num_clips==GF_MAX_GL_CLIPS) return;
 	gf_vec_norm(&p.normal);
 	visual->clippers[visual->num_clips].p = p;
 	visual->clippers[visual->num_clips].is_2d_clip = is_2d_clip;
 	visual->clippers[visual->num_clips].mx_clipper = mx_at_clipper;
 	visual->num_clips++;
+#endif
 }
 
 void visual_3d_reset_clip_plane(GF_VisualManager *visual)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 	if (!visual->num_clips) return;
 	visual->num_clips -= 1;
+#endif
 }
 
 void visual_3d_set_material(GF_VisualManager *visual, u32 material_type, Fixed *rgba)

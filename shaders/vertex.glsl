@@ -79,11 +79,11 @@ uniform int gfNumLights;
 #endif
 
 //Fog
-uniform bool gfFogEnabled; 
-uniform vec3 gfFogColor; 
-uniform float gfFogDensity; 
-uniform int gfFogType; 
-uniform float gfFogVisibility; 
+uniform bool gfFogEnabled;
+uniform vec3 gfFogColor;
+uniform float gfFogDensity;
+uniform int gfFogType;
+uniform float gfFogVisibility;
 
 #endif
 
@@ -101,12 +101,14 @@ uniform bool hasTextureMatrix;
 #endif
 
 //Clipping
+#ifdef GF_GL_HAS_CLIPPING
 #if defined(GL_ES)
 uniform lowp int gfNumClippers;
 #else
 uniform int gfNumClippers;
 #endif
 uniform vec4 clipPlane[CLIPS_MAX];
+#endif
 
 //Varyings
 #ifdef GF_GL_HAS_LIGHT
@@ -126,15 +128,16 @@ varying vec2 TexCoord;
 varying vec4 m_color;
 #endif
 
+#ifdef GF_GL_HAS_CLIPPING
 varying float clipDistance[CLIPS_MAX];
-
+#endif
 
 #ifdef GF_GL_HAS_LIGHT
 float fog()
 {
-	
+
 	float fog, eyeDist = length(gfEye-gfVertex);
-	
+
 	if(gfFogType==FOG_TYPE_LINEAR){
 		fog= (gfFogVisibility-eyeDist)/gfFogVisibility;
 	}else if(gfFogType==FOG_TYPE_EXP){
@@ -149,22 +152,18 @@ float fog()
 
 void main(void)
 {
-#ifndef GF_GL_HAS_LIGHT
-	vec4 gfEye;
-#endif
-	
-	gfEye = gfModelViewMatrix * gfVertex;
-	
+	vec4 gfEye = gfModelViewMatrix * gfVertex;
+
 #ifdef GF_GL_HAS_COLOR
 	m_color = gfMeshColor;
 #endif
-	
+
 #ifdef GF_GL_HAS_LIGHT
 	m_normal = normalize( vec3(gfNormalMatrix * vec4(gfNormal, 0.0)) );
-	
+
 	for(int i=0; i<LIGHTS_MAX; i++){
 		if (i==gfNumLights) break;
-		
+
 		if ( lights[i].type == L_SPOT || lights[i].type == L_POINT ) {
 			lightVector[i] = lights[i].position.xyz - gfEye.xyz;
 		} else {
@@ -173,9 +172,9 @@ void main(void)
 		}
 	}
 	gfFogFactor = gfFogEnabled ? fog() : 1.0;
-	
+
 #endif
-	
+
 #ifdef GF_GL_HAS_TEXTURE
 	if (hasTextureMatrix) {
 		TexCoord = vec2(gfTextureMatrix * gfMultiTexCoord);
@@ -183,13 +182,14 @@ void main(void)
 		TexCoord = vec2(gfMultiTexCoord);
 	}
 #endif
-	
-	
+
+#ifdef GF_GL_HAS_CLIPPING
 	//clipPlane are given in eye coordinate
 	for (int i=0; i<CLIPS_MAX; i++) {
 		if (i==gfNumClippers) break;
 		clipDistance[i] = dot(gfEye.xyz, clipPlane[i].xyz) + clipPlane[i].w;
 	}
-	
+#endif
+
 	gl_Position = gfProjectionMatrix * gfEye;
 }

@@ -296,6 +296,8 @@ target_compile_definitions (gpac PUBLIC
   GPAC_DISABLE_VOBSUB
   GPAC_DISABLE_VTT
   GPAC_DISABLE_VALIDATOR
+  GPAC_DISABLE_CLIPPING
+  GPAC_DISABLE_LIGHTS
   $<$<CONFIG:release>:GPAC_DISABLE_LOG>
 )
 target_include_directories (gpac BEFORE PRIVATE

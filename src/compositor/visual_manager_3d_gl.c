@@ -596,30 +596,35 @@ static GF_SHADERID visual_3d_shader_with_flags(const char *src_path, u32 shader_
 	str_size = strlen(defs) + 1; //+1 for trailing \0
 	
 	/*clipping is always enabled*/
-	sprintf(szKey, "#define CLIPS_MAX %d\n", GF_MAX_GL_CLIPS);
-	str_size += strlen(szKey);
-	defs = (char *) gf_realloc(defs, sizeof(char)*str_size);
-	strcat(defs, szKey);
-	
+	if (flags & GF_GL_HAS_CLIPPING) {
+	        sprintf(szKey, "#define GF_GL_HAS_CLIPPING\n#define CLIPS_MAX %d\n", GF_MAX_GL_CLIPS);
+		str_size += strlen(szKey);
+		defs = (char *) gf_realloc(defs, sizeof(char)*str_size);
+		strcat(defs, szKey);
+        }
+
+#ifndef GPAC_DISABLE_LIGHTS
 	if (flags & GF_GL_HAS_LIGHT) {
+		abort();
 		sprintf(szKey, "#define GF_GL_HAS_LIGHT\n#define LIGHTS_MAX %d\n", GF_MAX_GL_LIGHTS);
 		str_size += strlen(szKey);
 		defs = (char *) gf_realloc(defs, sizeof(char)*str_size);
 		strcat(defs, szKey);
 	}
-	
+#endif
+
 	if(flags & GF_GL_HAS_COLOR) {
 		str_size += strlen("#define GF_GL_HAS_COLOR \n");
 		defs = (char *) gf_realloc(defs, sizeof(char)*str_size);
 		strcat(defs,"#define GF_GL_HAS_COLOR \n");
 	}
-	
-	if(flags & GF_GL_HAS_TEXTURE) {
+
+	if (flags & GF_GL_HAS_TEXTURE) {
 		str_size += strlen("#define GF_GL_HAS_TEXTURE \n");
 		defs = (char *) gf_realloc(defs, sizeof(char)*str_size);
 		strcat(defs,"#define GF_GL_HAS_TEXTURE \n");
 	}
-	
+
 	if (shader_type==GL_FRAGMENT_SHADER) {
 		if(flags & GF_GL_IS_YUV) {
 			str_size += strlen("#define GF_GL_IS_YUV \n");
@@ -1647,6 +1652,7 @@ static void visual_3d_update_matrices(GF_TraverseState *tr_state)
 
 static void visual_3d_set_clippers(GF_VisualManager *visual, GF_TraverseState *tr_state)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 #ifdef GL_MAX_CLIP_PLANES
 	u32 i;
 	GF_Matrix inv_mx;
@@ -1701,16 +1707,19 @@ static void visual_3d_set_clippers(GF_VisualManager *visual, GF_TraverseState *t
 
 	}
 #endif
+#endif
 
 }
 
 static void visual_3d_reset_clippers(GF_VisualManager *visual)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 #ifdef GL_MAX_CLIP_PLANES
 	u32 i;
 	for (i=0; i<visual->num_clips; i++) {
 		glDisable(GL_CLIP_PLANE0 + i);
 	}
+#endif
 #endif
 }
 
@@ -1950,7 +1959,7 @@ static void visual_3d_set_lights(GF_VisualManager *visual)
 
 void visual_3d_enable_fog(GF_VisualManager *visual)
 {
-
+#ifndef GPAC_DISABLE_LIGHTS
 #ifndef GPAC_USE_TINYGL
 
 #if defined(GPAC_USE_GLES1X) && defined(GPAC_FIXED_POINT)
@@ -1993,6 +2002,7 @@ void visual_3d_enable_fog(GF_VisualManager *visual)
 	glHint(GL_FOG_HINT, visual->compositor->high_speed ? GL_FASTEST : GL_NICEST);
 #endif
 
+#endif
 #endif
 
 }
@@ -2268,8 +2278,9 @@ static void visual_3d_set_lights_shaders(GF_TraverseState *tr_state)
 
 static void visual_3d_set_fog_shaders(GF_VisualManager *visual)
 {
+#ifndef GPAC_DISABLE_LIGHTS
 	GLint loc;
-	if (visual->has_fog) {
+	if (GF_GL_HAS_LIGHT) { && visual->has_fog) {
 		loc = gf_glGetUniformLocation(visual->glsl_program, "gfFogEnabled");
 		if(loc>=0)
 			glUniform1i(loc, GL_TRUE);
@@ -2296,10 +2307,12 @@ static void visual_3d_set_fog_shaders(GF_VisualManager *visual)
 
 	}
 	GL_CHECK_ERR
+#endif
 }
 
 static void visual_3d_set_clippers_shaders(GF_VisualManager *visual, GF_TraverseState *tr_state)
 {
+#ifndef GPAC_DISABLE_CLIPPING
 	Fixed vals[4];
 	char szName[100];
 	GLint loc;
@@ -2312,9 +2325,11 @@ static void visual_3d_set_clippers_shaders(GF_VisualManager *visual, GF_Traverse
 	gf_mx_copy(eye_mx, tr_state->camera->modelview);
 	gf_mx_add_matrix(&eye_mx, &tr_state->model_matrix);
 
-	loc = gf_glGetUniformLocation(visual->glsl_program, "gfNumClippers");
-	if (loc>=0)
-		glUniform1i(loc, visual->num_clips);
+	if (visual->num_clips) {
+		loc = gf_glGetUniformLocation(visual->glsl_program, "gfNumClippers");
+		if (loc>=0)
+			glUniform1i(loc, visual->num_clips);
+	}
 
 	for (i = 0; i < visual->num_clips; i++) {
 		GF_Matrix mx;
@@ -2340,6 +2355,7 @@ static void visual_3d_set_clippers_shaders(GF_VisualManager *visual, GF_Traverse
 			glUniform4fv(loc, 1, vals); //Set Plane (w = distance)
 		}
 	}
+#endif
 }
 
 static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh *mesh)
@@ -2368,11 +2384,15 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 		
 	}
 
-	if(visual->num_lights) {
+#ifndef GPAC_DISABLE_LIGHTS
+	if (visual->num_lights) {
 		flags |= GF_GL_HAS_LIGHT;
 	} else {
+#endif
 		flags &= ~GF_GL_HAS_LIGHT;
+#ifndef GPAC_DISABLE_LIGHTS
 	}
+#endif
 
 	root_visual->glsl_flags = visual->glsl_flags = flags;
 	
@@ -2412,9 +2432,13 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 	glVertexAttribPointer(loc_vertex_array, 3, GL_FLOAT, GL_FALSE, sizeof(GF_Vertex), vertex_buffer_address);
 #endif
 
+
+#ifndef GPAC_DISABLE_CLIPPING
 	//setup clippers (always true)
-	visual_3d_set_clippers_shaders(visual, tr_state);
-	
+        if (visual->num_clips)
+		visual_3d_set_clippers_shaders(visual, tr_state);
+#endif
+
 	/* Material2D does not have any lights, color used is "gfEmissionColor" uniform */
 	if (visual->has_material_2d) {
 		//for YUV manually set alpha
@@ -2441,14 +2465,14 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 		if (loc>=0)
 			glUniform1i(loc, 1);
 		GL_CHECK_ERR
-		
+
 	} else {
-		
+
 		loc = gf_glGetUniformLocation(visual->glsl_program, "hasMaterial2D");
 		if (loc>=0)
 			glUniform1i(loc, 0);
 		GL_CHECK_ERR
-		
+
 		//for YUV manually set alpha
 		if (flags & GF_GL_IS_YUV) {
 			loc = gf_glGetUniformLocation(visual->glsl_program, "alpha");
@@ -2457,8 +2481,9 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 			GL_CHECK_ERR
 		}
 	}
-	
+
 	/* if lighting is on, setup material */
+#ifndef GPAC_DISABLE_LIGHTS
 	if ((flags & GF_GL_HAS_LIGHT) && visual->has_material && !visual->has_material_2d) {
 		u32 i;
 		for(i =0; i<4;i++){
@@ -2496,9 +2521,10 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 		loc = gf_glGetUniformLocation(visual->glsl_program, "gfShininess");
 		if (loc>=0)
 			glUniform1f(loc, FIX2FLT(visual->shininess));
-		
+
 		glDisable(GL_CULL_FACE);	//Enable for performance; if so, check glFrontFace()
 	}
+#endif
 
 	//setup mesh color vertex attribute - only available for some shaders
 	if (!tr_state->mesh_num_textures && (mesh->flags & MESH_HAS_COLOR)) {
@@ -2518,6 +2544,7 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 		GL_CHECK_ERR
 	}
 
+#ifndef GPAC_DISABLE_LIGHTS
 	if (flags & GF_GL_HAS_LIGHT) {
 		visual_3d_set_fog_shaders(visual);
 	}
@@ -2554,6 +2581,7 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 		visual_3d_set_lights_shaders(tr_state);
 		GL_CHECK_ERR
 	}
+#endif
 
 	//setup mesh normal vertex attribute - only available for some shaders
 	if (tr_state->mesh_num_textures && (mesh->mesh_type==MESH_TRIANGLES) && !(mesh->flags & MESH_NO_TEXTURE)) {
@@ -2585,15 +2613,17 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 			GL_CHECK_ERR
 		}
 	}
-	
+
 	//
 	if (mesh->mesh_type != MESH_TRIANGLES) {
+#ifndef GPAC_DISABLE_LIGHTS
 		//According to the spec we should pass a 0,0,1 Normal and disable lights. we just disable lights
 		if(flags & GF_GL_HAS_LIGHT){
 			loc = gf_glGetUniformLocation(visual->glsl_program, "gfNumLights");
 			if (loc>=0)	glUniform1i(loc, 0);
 
 		}
+#endif
 		glDisable(GL_CULL_FACE);
 
 #if !defined(GPAC_USE_TINYGL) && !defined(GL_ES_CL_PROFILE)
@@ -2696,12 +2726,14 @@ static void visual_3d_draw_mesh_shader_only(GF_TraverseState *tr_state, GF_Mesh 
 	if (loc_normal_array>=0) glDisableVertexAttribArray(loc_normal_array);
 	if (loc_textcoord_array>=0) glDisableVertexAttribArray(loc_textcoord_array);
 
+#ifndef GPAC_DISABLE_LIGHTS
 	//instead of visual_3d_reset_lights(visual);
 	if(visual->compositor->visual->glsl_flags & GF_GL_HAS_LIGHT){
 		loc = gf_glGetUniformLocation(visual->glsl_program, "gfNumLights");
 		if (loc>=0)	glUniform1i(loc, 0);
 		GL_CHECK_ERR
 	}
+#endif
 
 	visual->has_material_2d = 0;
 	visual->glsl_flags = visual->compositor->visual->glsl_flags;
@@ -2758,23 +2790,26 @@ static void visual_3d_draw_mesh(GF_TraverseState *tr_state, GF_Mesh *mesh)
 		return;
 	}
 	has_col = has_tx = has_norm = 0;
-	
+
 	//set lights before pushing modelview matrix
 	visual_3d_set_lights(visual);
 
 	visual_3d_update_matrices(tr_state);
 
+#ifndef GPAC_DISABLE_LIGHTS
 	/*enable states*/
 	if (visual->has_fog) visual_3d_enable_fog(visual);
+#endif
 
 	if (visual->state_color_on) glEnable(GL_COLOR_MATERIAL);
 	else glDisable(GL_COLOR_MATERIAL);
 
 	if (visual->state_blend_on) glEnable(GL_BLEND);
 
-
+#ifndef GPAC_DISABLE_CLIPPING
 	if (visual->num_clips)
 		visual_3d_set_clippers(visual, tr_state);
+#endif
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 #if defined(GPAC_USE_GLES1X)
@@ -3081,9 +3116,11 @@ static void visual_3d_draw_mesh(GF_TraverseState *tr_state, GF_Mesh *mesh)
 
 	glDisable(GL_COLOR_MATERIAL);
 
+#ifndef GPAC_DISABLE_CLIPPING
 	//reset all our states
 	if (visual->num_clips)
 		visual_3d_reset_clippers(visual);
+#endif
 	visual->has_material_2d = 0;
 	visual->has_material = 0;
 	visual->state_color_on = 0;
