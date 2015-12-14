@@ -722,3 +722,71 @@ size_t gf_fwrite(const void *ptr, size_t size, size_t nmemb,
 	return result;
 }
 
+GF_EXPORT
+GF_Err gf_file_read(const char *src_path, char **dst)
+{
+	GF_Err rc = GF_IO_ERR;
+	size_t size, total = 0;
+	char *tmp;
+	FILE *src = gf_fopen(src_path, "rt");
+
+	*dst = NULL;
+
+	if (src == NULL) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("Failed to open file %s\n", src_path));
+		goto error;
+	}
+
+	if ((s32) gf_fseek(src, 0, SEEK_END) < 0) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+		       ("Unable to fetch file %s size\n", src_path));
+		goto error_close;
+	}
+
+	size = (size_t) gf_ftell(src);
+
+	if ((s32) size < 0) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+		       ("unable to fetch file %s size\n", src_path));
+		goto error_close;
+	}
+
+	if ((s32) gf_fseek(src, 0, SEEK_SET) < 0) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+		       ("unable to fetch file %s size\n", src_path));
+		goto error_close;
+	}
+
+	GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+	       ("reading %zu bytes from file %s\n", size, src_path));
+
+	tmp = gf_malloc(sizeof(char)*(size+1));
+	if (tmp == NULL) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+		       ("unable to read file %s\n", src_path));
+		goto error_close;
+	}
+
+	while (total < size) {
+		size_t r = fread(tmp + total, 1, size - total, src);
+		if (r < 0) {
+			GF_LOG(GF_LOG_ERROR, GF_LOG_CORE,
+			       ("unable to read file %s\n", src_path));
+			gf_free(tmp);
+			goto error_close;
+		}
+		total += r;
+	}
+
+	tmp[size] = '\0';
+	*dst = tmp;
+
+	rc = GF_OK;
+
+ error_close:
+	gf_fclose(src);
+ error:
+	return rc;
+
+
+}

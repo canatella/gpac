@@ -546,29 +546,35 @@ Bool visual_3d_compile_shader(GF_SHADERID shader_id, const char *name, const cha
 }
 static GF_SHADERID visual_3d_shader_from_source_file(const char *src_path, u32 shader_type)
 {
-	FILE *src = gf_fopen(src_path, "rt");
 	GF_SHADERID shader = 0;
-	if (src) {
-		size_t size;
-		char *shader_src;
-		gf_fseek(src, 0, SEEK_END);
-		size = (size_t) gf_ftell(src);
-		gf_fseek(src, 0, SEEK_SET);
-		shader_src = gf_malloc(sizeof(char)*(size+1));
-		size = fread(shader_src, 1, size, src);
-		gf_fclose(src);
-		if (size != (size_t) -1) {
-			shader_src[size]=0;
-			shader = glCreateShader(shader_type);
-			if (visual_3d_compile_shader(shader, (shader_type == GL_FRAGMENT_SHADER) ? "fragment" : "vertex", shader_src)==GF_FALSE) {
-				glDeleteShader(shader);
-				shader = 0;
-			}
-		}
-		gf_free(shader_src);
-	} else {
-		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE, ("[Compositor] Failed to open shader file %s\n", src_path));
+	char *shader_src;
+	if (gf_file_read(src_path, &shader_src) != GF_OK) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] unable to read shader file %s\n", src_path));
+		goto error;
 	}
+
+	shader = glCreateShader(shader_type);
+	if (shader == 0) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] unable to create shader for file %s\n", src_path));
+		goto error_free_src;
+	}
+
+	char *name = (shader_type == GL_FRAGMENT_SHADER ? "fragment" : "vertex");
+	if (visual_3d_compile_shader(shader, name, shader_src) == GF_FALSE) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] error compiling shader file %s\n", src_path));
+		glDeleteShader(shader);
+		shader = 0;
+		goto error_free_src;
+	}
+	GF_LOG(GF_LOG_INFO, GF_LOG_COMPOSE,
+	       ("[Compositor] shader file %s compiled\n", src_path));
+
+ error_free_src:
+	gf_free(shader_src);
+ error:
 	return shader;
 }
 
@@ -622,31 +628,37 @@ static GF_SHADERID visual_3d_shader_with_flags(const char *src_path, u32 shader_
 		}
 	}
 
-	if (src) {
-		size_t size;
-		gf_fseek(src, 0, SEEK_END);
-		size = (size_t) gf_ftell(src);
-		gf_fseek(src, 0, SEEK_SET);
-		shader_src = gf_malloc(sizeof(char)*(size+1));
-		size = fread(shader_src, 1, size, src);
-		tmp = (char *) gf_malloc(sizeof(char)*(size+str_size+2));
-		strcpy(tmp, defs);
-		strncat(tmp, shader_src, (size));
-		fclose(src);
-		if (size != (size_t) -1) {
-			tmp[size+str_size]=0;
-			shader = glCreateShader(shader_type);
-			if (visual_3d_compile_shader(shader, (shader_type == GL_FRAGMENT_SHADER) ? "fragment" : "vertex", tmp)==GF_FALSE) {
-				glDeleteShader(shader);
-				shader = 0;
-			}
-		}
-		gf_free(shader_src);
-		gf_free(tmp);
-		gf_free(defs);
-	} else {
-		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE, ("[Compositor] Failed to open shader file %s\n", src_path));
+	if (gf_file_read(src_path, &shader_src) != GF_OK) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] unable to read shader file %s\n", src_path));
+		goto error_free_defs;
 	}
+
+	str_size += strlen(shader_src);
+	defs = (char *) gf_realloc(defs, str_size);
+	strcat(defs, shader_src);
+
+	shader = glCreateShader(shader_type);
+	if (shader == 0) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] unable to create shader for file %s\n", src_path));
+		goto error_free_shader_src;
+	}
+
+	char *name = (shader_type == GL_FRAGMENT_SHADER ? "fragment" : "vertex");
+	if (visual_3d_compile_shader(shader, name, defs) == GF_FALSE) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_COMPOSE,
+		       ("[Compositor] error compiling shader file %s\n", src_path));
+
+		glDeleteShader(shader);
+		shader = 0;
+		goto error_free_shader_src;
+	}
+
+ error_free_shader_src:
+	gf_free(shader_src);
+ error_free_defs:
+	gf_free(defs);
 	return shader;
 }
 
