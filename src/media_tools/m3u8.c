@@ -816,6 +816,12 @@ GF_Err declare_sub_playlist(char *currentLine, const char *baseURL, s_accumulate
 				}
 				assert(curr_playlist->element.playlist.elements);
 				assert(fullURL);
+				/* we've encountered playlists with
+				   titles: "#EXTINF:10, no desc" */
+				if (curr_playlist->title) {
+					gf_free(curr_playlist->title);
+					curr_playlist->title = NULL;
+				}
 				assert(curr_playlist->url && !curr_playlist->title && !curr_playlist->codecs);
 				curr_playlist->title = NULL;
 				curr_playlist->codecs = NULL;
